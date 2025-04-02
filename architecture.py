@@ -2,29 +2,42 @@ import numpy as np
 
 class nn:
     def __init__(self):
-        self.layers = []
-        # this could be refactored to instantiate all layers to be self.layer1 = ~, but list format seemed cleaner 
-        self.layers.append(LinearLayer(28*28, 256))
-        self.layers.append(ReLU())
-        self.layers.append(LinearLayer(256, 128))
-        self.layers.append(ReLU())
-        self.layers.append(LinearLayer(128, 10))
+        self.layer1 = LinearLayer(28*28, 256)
+        self.act1 = ReLU()
+        self.layer2 = LinearLayer(256, 128)
+        self.act2 = ReLU()
+        self.layer3 = LinearLayer(128, 10)
+
     
     def forward(self, x):
-        for layer in self.layers:
-            x = layer.forward(x)
+        x = self.layer1.forward(x)
+        x = self.act1.forward(x)
+        x = self.layer2.forward(x)
+        x = self.act2.forward(x)
+        x = self.layer3.forward(x)
         return x
     
     def backward(self, delta):
-        for layer in reversed(self.layers):
-            delta = layer.backward(delta)
-        
+        delta = self.layer3.backward(delta)
+        delta = self.act2.backward(delta)
+        delta = self.layer2.backward(delta)
+        delta = self.act1.backward(delta)
+        delta = self.layer1.backward(delta)
+
+    # collects weights and their gradients in a list across all layers for use in optimization
+    def parameters(self):
+        params = []
+        self.layer1.params(params)
+        self.layer2.params(params)
+        self.layer3.params(params)
+        return params
 class LinearLayer:
 
     def __init__(self, in_features, out_features):
         # TODO figure out weight initialization
-        self.weights = np.random.randn(in_features, out_features)
-        self.bias = np.random.randn(out_features)
+        std = np.sqrt(2 / in_features)
+        self.weights = np.random.randn(in_features, out_features) * std
+        self.bias = np.zeros(out_features)
 
     def forward(self, x):
         # TODO store activations for backward pass
@@ -39,6 +52,11 @@ class LinearLayer:
         self.bias_grad = np.sum(delta, axis = 0) # (b,o) -> (o)
         d = delta @ self.weights.T # (b, o) @ (o, i) -> (b,i)
         return d 
+    
+    # collect parameters and their gradients for use in sgd
+    def params(self, params):
+        params.append((self.weights, self.weights_grad))
+        params.append((self.bias, self.bias_grad))
 
 class ReLU:
 
