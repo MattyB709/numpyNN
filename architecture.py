@@ -37,7 +37,9 @@ class LinearLayer:
         # TODO figure out weight initialization
         std = np.sqrt(2 / in_features)
         self.weights = np.random.randn(in_features, out_features) * std
+        self.weights_grad = np.zeros_like(self.weights)
         self.bias = np.zeros(out_features)
+        self.bias_grad = np.zeros_like(self.bias)
 
     def forward(self, x):
         # TODO store activations for backward pass
@@ -48,8 +50,8 @@ class LinearLayer:
 
     def backward(self, delta):
         # delta should be of shape (batch, out_features)
-        self.weights_grad = self.x.T @ delta # (i,b) @ (b, o) -> (i, o)
-        self.bias_grad = np.sum(delta, axis = 0) # (b,o) -> (o)
+        self.weights_grad[:] = self.x.T @ delta # (i,b) @ (b, o) -> (i, o)
+        self.bias_grad[:] = np.sum(delta, axis = 0) # (b,o) -> (o)
         d = delta @ self.weights.T # (b, o) @ (o, i) -> (b,i)
         return d 
     
@@ -85,11 +87,11 @@ class CrossEntropy:
         self.y = y
         # we do arange here because for every row we want the y_i logprob
         prob = log_probs[np.arange(log_probs.shape[0]), y] 
-        return -(prob).sum().item()    
+        return -prob.mean().item()    
 
     # gradient w.r.t cross entropy and softmax works out to be (y^ - y)
     def backward(self):
         # get a (num_classes, num_classes) identity matrix to index and get one_hot vectors
         Identity = np.eye(self.probs.shape[1]) 
         one_hot = Identity[self.y] 
-        return self.probs - one_hot
+        return (self.probs - one_hot) / self.probs.shape[0]

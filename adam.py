@@ -16,7 +16,6 @@ class Adam:
     def step(self):
         for i in range(len(self.params)):
             params, grads = self.params[i]
-            
             # calculate new v values
             v = self.v_list[i]
             v = self.beta2 * v + (1- self.beta2) * np.pow(grads, 2)
@@ -28,8 +27,8 @@ class Adam:
             m = self.beta1 * m + (1 - self.beta1) * grads
             self.m_list[i] = m
             m_hat = m / (1 - self.beta1 ** self.t)
-
-            params -= self.lr * m_hat / (np.sqrt(v_hat + self.eps))
+            update = self.lr * m_hat / (np.sqrt(v_hat)+ self.eps)
+            params -= update
         self.t += 1
 
 
